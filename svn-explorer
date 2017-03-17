@@ -1,4 +1,15 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
-
-puts 'Hello, world!'
+loop do
+  STDERR.print('> ')
+  input = gets&.chomp
+  case input
+  when nil
+    STDERR.puts
+    break
+  when 'exit'
+    break
+  else
+    STDERR.puts("#{$PROGRAM_NAME}: command not found: #{input}")
+  end
+end
