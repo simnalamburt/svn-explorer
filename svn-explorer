@@ -1,15 +1,88 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+
+#
+# Constants
+#
+SEPARATOR = '/'
+PATH_BUFFER = []
+REPO_URL = begin
+  arg = ARGV[0]
+  if arg.nil?
+    STDERR.puts("usage: #{$PROGRAM_NAME} <repository>")
+    exit(1)
+  end
+
+  # Handle trailing slashes
+  if arg[-1] != SEPARATOR
+    arg + SEPARATOR
+  else
+    arg.sub(/(#{SEPARATOR})+$/, SEPARATOR)
+  end
+end
+
+def cwd(buffer = PATH_BUFFER)
+  return REPO_URL + buffer.map { |path| path + SEPARATOR } .join()
+end
+
+def error(msg)
+  STDERR.puts("#{$PROGRAM_NAME}: #{msg}")
+end
+
 loop do
-  STDERR.print('> ')
-  input = gets&.chomp
-  case input
-  when nil
-    STDERR.puts
-    break
+  STDERR.print("#{cwd}$ ")
+  line = STDIN.gets&.chomp # TODO: rb-readline으로 대체
+  argv = line&.split
+
+  # TODO: 이거 특수처리하지 말고 패턴매칭 쓰도록 수정
+  next if argv&.empty?
+  case argv&.dig(0)
+
+  # List
+  when 'll', 'l'
+    # TODO: 좀더 추가적인 정보를 주도록 설정
+    system("svn ls '#{cwd()}'")
+  when 'ls'
+    system("svn ls '#{cwd()}' | column")
+
+  # Change directory
+  when 'cd'
+    # TODO: '/'로 자르기
+    dirname = argv[1]
+
+    # 인자가 없을경우 루트 디렉토리로 감
+    if dirname.nil?
+      PATH_BUFFER.clear()
+      next
+    end
+
+    # '..' 특수처리
+    if dirname == '..'
+      PATH_BUFFER.pop()
+      next
+    end
+
+    # 디렉토리 존재하는지 검사
+    if not system("svn ls '#{cwd(PATH_BUFFER + [dirname])}' --depth empty >/dev/null 2>/dev/null")
+      error("The directory '#{dirname}' does not exist")
+      next
+    end
+
+    # TODO: 디렉토리가 맞는지 검사
+
+    PATH_BUFFER.push(dirname)
+  when /^\.+$/
+    PATH_BUFFER.pop(argv[0].length - 1)
+
+  # Exit commands
   when 'exit'
     break
+  when nil
+    # Received ctrl + D
+    STDERR.puts(); break
+
+  # Command not found
   else
-    STDERR.puts("#{$PROGRAM_NAME}: command not found: #{input}")
+    error("command not found: #{argv[0]}")
   end
 end
