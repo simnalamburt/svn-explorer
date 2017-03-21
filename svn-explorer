@@ -25,7 +25,7 @@ end
 #
 # Utility functions
 #
-def url(buffer = PATH_BUFFER)
+def url(buffer)
   return REPO_URL + buffer.map { |path| path + SEPARATOR } .join()
 end
 
@@ -39,12 +39,12 @@ end
 Readline.completion_append_character = ''
 Readline.completion_proc = -> query {
   # TODO: 깊은 디렉토리 탐색도 지원해야함
-  `svn ls '#{url}'`.lines.map(&:chomp).grep(/^#{Regexp.escape(query)}/)
+  `svn ls '#{url(PATH_BUFFER)}'`.lines.map(&:chomp).grep(/^#{Regexp.escape(query)}/)
 }
 
 loop do
   line = begin
-    Readline.readline("#{url}$ ", true)
+    Readline.readline("#{url(PATH_BUFFER)}$ ", true)
   rescue Interrupt
     STDERR.puts('^C')
     next
@@ -63,9 +63,9 @@ loop do
   # List
   when 'll', 'l'
     # TODO: 좀더 추가적인 정보를 주도록 설정
-    system("svn ls '#{url}'")
+    system("svn ls '#{url(PATH_BUFFER)}'")
   when 'ls'
-    system("svn ls '#{url}' | column")
+    system("svn ls '#{url(PATH_BUFFER)}' | column")
 
   # Change directory
   when 'cd'
