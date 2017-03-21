@@ -6,8 +6,8 @@ require 'readline'
 # Constants
 #
 SEPARATOR = '/'
-PATH_BUFFER = []
 REPO_URL = begin
+  # Read command line arguments
   arg = ARGV[0]
   if arg.nil?
     STDERR.puts("usage: #{$PROGRAM_NAME} <repository>")
@@ -36,76 +36,101 @@ end
 #
 # Main logic
 #
-Readline.completion_append_character = ''
-Readline.completion_proc = -> query {
-  # TODO: 깊은 디렉토리 탐색도 지원해야함
-  `svn ls '#{url(PATH_BUFFER)}'`.lines.map(&:chomp).grep(/^#{Regexp.escape(query)}/)
-}
+def read(path_stack)
+  loop do
+    begin
+      line = Readline.readline("#{url(path_stack)}$ ", true)
+      STDERR.puts if line.nil?
+      return line
+    rescue Interrupt
+      STDERR.puts('^C')
+    end
+  end
+end
 
-loop do
-  line = begin
-    Readline.readline("#{url(PATH_BUFFER)}$ ", true)
-  rescue Interrupt
-    STDERR.puts('^C')
-    next
+def parse(line)
+  # TODO: 제대로 파싱하기
+  return line.split
+end
+
+class EvaluateResult
+  def initialize(path_stack, cmd = nil)
+    @path_stack = path_stack
+    @cmd = cmd
   end
 
-  # Handle Ctrl+D
-  # TODO: 패턴매칭으로 잡기
-  if line.nil?
-    STDERR.puts
-    break
-  end
-
-  argv = line.split
-  case argv[0]
+  def path_stack; @path_stack; end
+  def cmd; @cmd; end
+end
+def evaluate(path_stack, program, arguments)
+  case program
 
   # List
   when 'll', 'l'
+    # TODO: 파라미터 처리
     # TODO: 좀더 추가적인 정보를 주도록 설정
-    system("svn ls '#{url(PATH_BUFFER)}'")
+    system("svn ls '#{url(path_stack)}'")
+    return EvaluateResult.new(path_stack)
+
   when 'ls'
-    system("svn ls '#{url(PATH_BUFFER)}' | column")
+    # TODO: 파라미터 처리
+    system("svn ls '#{url(path_stack)}' | column")
+    return EvaluateResult.new(path_stack)
 
   # Change directory
   when 'cd'
     # TODO: '/'로 자르기
-    dirname = argv[1]
+    dirname = arguments[0]
 
     # 인자가 없을경우 루트 디렉토리로 감
     if dirname.nil?
-      PATH_BUFFER.clear()
-      next
+      return EvaluateResult.new([])
     end
 
-    # '..' 특수처리
+    # '.', '..' 특수처리
+    if dirname == '.'
+      return EvaluateResult.new(path_stack)
+    end
     if dirname == '..'
-      PATH_BUFFER.pop()
-      next
+      return EvaluateResult.new(path_stack[0...-1])
     end
 
     # 디렉토리 존재하는지 검사
-    if not system("svn ls '#{url(PATH_BUFFER + [dirname])}' --depth empty >/dev/null 2>/dev/null")
+    if not system("svn ls '#{url(path_stack + [dirname])}' --depth empty >/dev/null 2>/dev/null")
       error("The directory '#{dirname}' does not exist")
-      next
+      return EvaluateResult.new(path_stack)
     end
 
     # TODO: 디렉토리가 맞는지 검사
 
-    PATH_BUFFER.push(dirname)
+    return EvaluateResult.new(path_stack + [dirname])
   when /^\.+$/
-    PATH_BUFFER.pop(argv[0].length - 1)
+    count = program.length - 1
+    return EvaluateResult.new(path_stack[0...-count])
 
   # Exit commands
-  when 'exit'
-    break
-
-  # Empty line, do nothing
-  when nil
-    next
+  when 'exit', 'quit'
+    return EvaluateResult.new(path_stack, :exit)
 
   # Command not found
   else
-    error("command not found: #{argv[0]}")
+    error("command not found: #{program}")
+    return EvaluateResult.new(path_stack)
   end
+end
+
+path_stack = []
+Readline.completion_append_character = ''
+Readline.completion_proc = -> query {
+  # TODO: 깊은 디렉토리 탐색도 지원해야함
+  `svn ls '#{url(path_stack)}'`.lines.map(&:chomp).grep(/^#{Regexp.escape(query)}/)
+}
+while line = read(path_stack)
+  tokens = parse(line)
+  next if tokens.empty?
+
+  result = evaluate(path_stack, tokens[0], tokens[1..-1])
+
+  path_stack = result.path_stack
+  break if result.cmd == :exit
 end
