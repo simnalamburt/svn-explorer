@@ -38,7 +38,7 @@ end
 #
 loop do
   line = begin
-    Readline::readline("#{url}$ ")
+    Readline.readline("#{url}$ ", true)
   rescue Interrupt
     STDERR.puts('^C')
     next
@@ -51,7 +51,6 @@ loop do
     break
   end
 
-  Readline::HISTORY.push(line)
   argv = line.split
   case argv[0]
 
