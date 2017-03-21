@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+require 'readline'
 
 #
 # Constants
@@ -21,7 +22,7 @@ REPO_URL = begin
   end
 end
 
-def cwd(buffer = PATH_BUFFER)
+def url(buffer = PATH_BUFFER)
   return REPO_URL + buffer.map { |path| path + SEPARATOR } .join()
 end
 
@@ -29,21 +30,17 @@ def error(msg)
   STDERR.puts("#{$PROGRAM_NAME}: #{msg}")
 end
 
-loop do
-  STDERR.print("#{cwd}$ ")
-  line = STDIN.gets&.chomp # TODO: rb-readline으로 대체
-  argv = line&.split
-
-  # TODO: 이거 특수처리하지 말고 패턴매칭 쓰도록 수정
-  next if argv&.empty?
-  case argv&.dig(0)
+while line = Readline::readline("#{url}$ ")
+  Readline::HISTORY.push(line)
+  argv = line.split
+  case argv[0]
 
   # List
   when 'll', 'l'
     # TODO: 좀더 추가적인 정보를 주도록 설정
-    system("svn ls '#{cwd()}'")
+    system("svn ls '#{url}'")
   when 'ls'
-    system("svn ls '#{cwd()}' | column")
+    system("svn ls '#{url}' | column")
 
   # Change directory
   when 'cd'
@@ -63,7 +60,7 @@ loop do
     end
 
     # 디렉토리 존재하는지 검사
-    if not system("svn ls '#{cwd(PATH_BUFFER + [dirname])}' --depth empty >/dev/null 2>/dev/null")
+    if not system("svn ls '#{url(PATH_BUFFER + [dirname])}' --depth empty >/dev/null 2>/dev/null")
       error("The directory '#{dirname}' does not exist")
       next
     end
@@ -77,9 +74,10 @@ loop do
   # Exit commands
   when 'exit'
     break
+
+  # Empty line, do nothing
   when nil
-    # Received ctrl + D
-    STDERR.puts(); break
+    next
 
   # Command not found
   else
