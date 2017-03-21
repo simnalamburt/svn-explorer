@@ -1,10 +1,8 @@
 svn-explorer
 ========
+Requires Ruby 2.3+
 
-### Prerequisite
-- Ruby 2.3.0+
-
-```
+```bash
 # Install dependencies
 bundle
 
