@@ -18,7 +18,7 @@ REPO_URL = begin
   if arg[-1] != SEPARATOR
     arg + SEPARATOR
   else
-    arg.sub(/(#{SEPARATOR})+$/, SEPARATOR)
+    arg.sub(/(#{Regexp.escape(SEPARATOR)})+$/, SEPARATOR)
   end
 end
 
