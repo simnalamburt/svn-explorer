@@ -44,6 +44,13 @@ loop do
     next
   end
 
+  # Handle Ctrl+D
+  # TODO: 패턴매칭으로 잡기
+  if line.nil?
+    STDERR.puts
+    break
+  end
+
   Readline::HISTORY.push(line)
   argv = line.split
   case argv[0]
