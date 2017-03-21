@@ -22,6 +22,9 @@ REPO_URL = begin
   end
 end
 
+#
+# Utility functions
+#
 def url(buffer = PATH_BUFFER)
   return REPO_URL + buffer.map { |path| path + SEPARATOR } .join()
 end
@@ -30,7 +33,17 @@ def error(msg)
   STDERR.puts("#{$PROGRAM_NAME}: #{msg}")
 end
 
-while line = Readline::readline("#{url}$ ")
+#
+# Main logic
+#
+loop do
+  line = begin
+    Readline::readline("#{url}$ ")
+  rescue Interrupt
+    STDERR.puts('^C')
+    next
+  end
+
   Readline::HISTORY.push(line)
   argv = line.split
   case argv[0]
