@@ -1,16 +1,13 @@
 svn-explorer
 ========
-Requires Ruby 2.3+
-
-```bash
-# Install dependencies
-bundle
-
-# Explore the SVN repository!
-bundle exec svn-explorer https://svn.example.com/repo/
-```
+Browse the SVN repository as you use the shell! Requires Ruby 2.3+
 
 ```console
+$ bundle
+Install dependencies...
+
+$ bundle exec svn-explorer https://svn.example.com/repo/
+
 https://svn.example.com/repo/$ ls
 project1/       project2/       project3/
 
