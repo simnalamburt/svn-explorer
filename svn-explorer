@@ -78,14 +78,11 @@ def evaluate(path_stack, program, arguments)
 
   # List
   when 'll', 'l'
-    # TODO: 파라미터 처리
     # TODO: 좀더 추가적인 정보를 주도록 설정
-    system("svn ls '#{url(path_stack)}'")
+    system("svn ls '#{url(arguments[0].nil? ? path_stack : resolve(path_stack, arguments[0]))}'")
     return EvaluateResult.new(path_stack)
-
   when 'ls'
-    # TODO: 파라미터 처리
-    system("svn ls '#{url(path_stack)}' | column")
+    system("svn ls '#{url(arguments[0].nil? ? path_stack : resolve(path_stack, arguments[0]))}' | column")
     return EvaluateResult.new(path_stack)
 
   # Change directory
