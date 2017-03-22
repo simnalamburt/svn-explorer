@@ -90,7 +90,7 @@ def evaluate(path_stack, program, arguments)
   # Change directory
   when 'cd'
     # TODO: '/'로 자르기
-    directories = arguments[0].split('/').reject(&:empty?)
+    directories = arguments[0]&.split('/')&.reject(&:empty?)
 
     # 인자가 없을경우 루트 디렉토리로 감
     if directories.nil?
