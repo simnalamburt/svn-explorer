@@ -25,6 +25,16 @@ end
 #
 # Utility functions
 #
+def resolve(path_stack, directories)
+  directories.reduce(path_stack) do |path_stack, dirname|
+    case dirname
+    when '.'; path_stack
+    when '..'; path_stack[0...-1]
+    else; path_stack + [dirname]
+    end
+  end
+end
+
 def url(buffer)
   return REPO_URL + buffer.map { |path| path + SEPARATOR } .join()
 end
@@ -87,24 +97,17 @@ def evaluate(path_stack, program, arguments)
       return EvaluateResult.new([])
     end
 
-    path_stack = directories.reduce(path_stack) do |path_stack, dirname|
-      # '.', '..' 특수처리
-      next path_stack if dirname == '.'
-      next path_stack[0...-1] if dirname == '..'
+    new_path_stack = resolve(path_stack, directories)
 
-      # 디렉토리 존재하는지 검사
-      if not system("svn ls '#{url(path_stack + [dirname])}' --depth empty >/dev/null 2>/dev/null")
-        error("The directory '#{dirname}' does not exist")
-        break path_stack
-      end
-
-      # TODO: 디렉토리가 맞는지 검사
-
-      # 디렉토리 변경
-      path_stack + [dirname]
+    # 디렉토리 존재하는지 검사
+    if not system("svn ls '#{url(new_path_stack)}' --depth empty >/dev/null 2>/dev/null")
+      error("The directory '#{arguments[0]}' does not exist")
+      return EvaluateResult.new(path_stack)
     end
 
-    return EvaluateResult.new(path_stack)
+    # TODO: 디렉토리가 맞는지 검사
+
+    return EvaluateResult.new(new_path_stack)
   when /^\.+$/
     count = program.length - 1
     return EvaluateResult.new(path_stack[0...-count])
