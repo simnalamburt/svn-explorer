@@ -120,13 +120,11 @@ end
 path_stack = []
 Readline.completion_append_character = ''
 Readline.completion_proc = -> argument {
-  # TODO: 디렉토리만 표시
-
   path, sep, query = argument.rpartition(SEPARATOR)
   return `svn ls '#{url(resolve(path_stack, path+sep))}'`
     .lines
     .map(&:chomp)
-    .grep(/^#{Regexp.escape(query)}/)
+    .grep(/^#{Regexp.escape(query)}.*\/$/)
     .map { |x| path + sep + x }
 }
 while line = read(path_stack)
