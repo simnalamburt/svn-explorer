@@ -20,3 +20,10 @@ contrib/        LICENSE         README.md       src/
 - Easy repository navigation.
 - Tab completion.
 - Shell-like user experience.
+
+<br>
+
+--------
+
+*svn-explorer* is primarily distributed under the terms of the [GNU General
+Public License v3.0](LICENSE) or any later version.
