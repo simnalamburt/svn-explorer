@@ -94,10 +94,15 @@ def evaluate(path_stack, program, arguments)
 
     new_path_stack = resolve(path_stack, arguments[0])
 
-    # TODO: 디렉토리가 맞는지 검사
-    # 디렉토리 존재하는지 검사
-    if not system("svn ls '#{url(new_path_stack)}' --depth empty >/dev/null 2>/dev/null")
+    output = `svn info '#{url(new_path_stack)}' 2>/dev/null`
+    # 경로에 파일이 존재하는지 검사
+    if not $?.success?
       error("The directory '#{arguments[0]}' does not exist")
+      return EvaluateResult.new(path_stack)
+    end
+    # 해당 파일이 디렉토리가 맞는지 검사
+    if output.match(/^Node Kind: (.*)$/)&.captures&.dig(0) != 'directory'
+      error("not a directory: #{arguments[0]}")
       return EvaluateResult.new(path_stack)
     end
 
