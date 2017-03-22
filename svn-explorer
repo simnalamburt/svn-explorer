@@ -80,30 +80,31 @@ def evaluate(path_stack, program, arguments)
   # Change directory
   when 'cd'
     # TODO: '/'로 자르기
-    dirname = arguments[0]
+    directories = arguments[0].split('/').reject(&:empty?)
 
     # 인자가 없을경우 루트 디렉토리로 감
-    if dirname.nil?
+    if directories.nil?
       return EvaluateResult.new([])
     end
 
-    # '.', '..' 특수처리
-    if dirname == '.'
-      return EvaluateResult.new(path_stack)
-    end
-    if dirname == '..'
-      return EvaluateResult.new(path_stack[0...-1])
+    path_stack = directories.reduce(path_stack) do |path_stack, dirname|
+      # '.', '..' 특수처리
+      next path_stack if dirname == '.'
+      next path_stack[0...-1] if dirname == '..'
+
+      # 디렉토리 존재하는지 검사
+      if not system("svn ls '#{url(path_stack + [dirname])}' --depth empty >/dev/null 2>/dev/null")
+        error("The directory '#{dirname}' does not exist")
+        break path_stack
+      end
+
+      # TODO: 디렉토리가 맞는지 검사
+
+      # 디렉토리 변경
+      path_stack + [dirname]
     end
 
-    # 디렉토리 존재하는지 검사
-    if not system("svn ls '#{url(path_stack + [dirname])}' --depth empty >/dev/null 2>/dev/null")
-      error("The directory '#{dirname}' does not exist")
-      return EvaluateResult.new(path_stack)
-    end
-
-    # TODO: 디렉토리가 맞는지 검사
-
-    return EvaluateResult.new(path_stack + [dirname])
+    return EvaluateResult.new(path_stack)
   when /^\.+$/
     count = program.length - 1
     return EvaluateResult.new(path_stack[0...-count])
