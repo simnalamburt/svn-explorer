@@ -57,6 +57,15 @@ def url(buffer)
   return REPO_URL + buffer.map { |path| path + SEPARATOR } .join()
 end
 
+def option()
+  return (
+    '--non-interactive ' +
+    '--no-auth-cache ' +
+    '--username <USERNAME> ' +
+    '--password <PASSWORD>'
+  )
+end
+
 def error(msg)
   STDERR.puts("#{$PROGRAM_NAME}: #{msg}")
 end
@@ -96,10 +105,10 @@ def evaluate(path_stack, program, arguments)
   # List
   when 'll', 'l'
     # TODO: 좀더 추가적인 정보를 주도록 설정
-    system("svn ls '#{url(arguments[0].nil? ? path_stack : resolve(path_stack, arguments[0]))}'")
+    system("svn ls #{option()} '#{url(arguments[0].nil? ? path_stack : resolve(path_stack, arguments[0]))}'")
     return EvaluateResult.new(path_stack)
   when 'ls'
-    system("svn ls '#{url(arguments[0].nil? ? path_stack : resolve(path_stack, arguments[0]))}' | column")
+    system("svn ls #{option()} '#{url(arguments[0].nil? ? path_stack : resolve(path_stack, arguments[0]))}' | column")
     return EvaluateResult.new(path_stack)
 
   # Change directory
@@ -111,7 +120,7 @@ def evaluate(path_stack, program, arguments)
 
     new_path_stack = resolve(path_stack, arguments[0])
 
-    output = `svn info '#{url(new_path_stack)}' 2>/dev/null`
+    output = `svn info #{option()} '#{url(new_path_stack)}' 2>/dev/null`
     # 경로에 파일이 존재하는지 검사
     if not $?.success?
       error("The directory '#{arguments[0]}' does not exist")
@@ -143,7 +152,7 @@ path_stack = []
 Readline.completion_append_character = ''
 Readline.completion_proc = -> argument {
   path, sep, query = argument.rpartition(SEPARATOR)
-  return `svn ls '#{url(resolve(path_stack, path+sep))}'`
+  return `svn ls #{option()} '#{url(resolve(path_stack, path+sep))}'`
     .lines
     .map(&:chomp)
     .grep(/^#{Regexp.escape(query)}.*\/$/)
